@@ -1,18 +1,17 @@
 import requests
 import mss
+import cv2
+import os
 import pyMeow as pm
 from bs4 import BeautifulSoup
 from pytesseract import pytesseract
 from time import sleep
-import cv2
+
 path_to_exe = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-run_path = r"C:\Users\Austin\Documents\Python\Projects\Web_stuff"
-# image = r"C:\Users\Austin\Documents\Python\Projects\Web_stuff\in.png"
-name_fail= []
+cwd = os.getcwd()
+
 players = []
-
-
-
+name_fail= []
 
 heronames = []
 classnames = []
@@ -25,8 +24,8 @@ all_stats = {}
 
 
 def playerloc(index):
-    c1w = 450-290
-    c1h = 385-360
+    c1w = 450-290 #column 1 width 
+    c1h = 385-360 #column 2 width 
 
     c2w = 1625-1435
     c2h = c1h
@@ -63,9 +62,23 @@ def playerloc(index):
         return player10_loc
     
 def screenshot(index):
-    with mss.mss() as sct:
+    # creating the storage folder if not present in current directory
+    # for x in os.listdir():
+    #     if x == 'paladins-gui-images':
+    #         present = 1
+    #     else:
+    #         present = 0
+    #         pass
+    # if present == 1:
+    #     pass
+    # else:
+    #     os.mkdir('paladins-gui-images')
+    #     print('image storage created:', cwd,'\paladins-gui-images')
+    
 
-        output = run_path+'\player'+str(index)+'.png'.format(**playerloc(index))
+    with mss.mss() as sct:
+        
+        output = cwd+'\paladins-gui-images\player'+str(index)+'.png'.format(**playerloc(index))
         sct.cls_image
         sct_img = sct.grab(playerloc(index))
         mss.tools.to_png(sct_img.rgb, sct_img.size, output=output)
@@ -118,11 +131,9 @@ def getlink(player):
             while count < 1:
                 count += 1
                 return str("https://paladins.guru"+x.get("href"))
-    sleep(1)
+    
                 
 def getchampstats(player):
-    c = 0
-    sleep(1)
     print('Starting storage on player',player)
     heronames.clear()
     classnames.clear()
@@ -130,6 +141,7 @@ def getchampstats(player):
     kda.clear()
     kda_stats.clear()
     win_rate.clear()
+    acc_stats.clear()
     link = getlink(player)
     page = BeautifulSoup(requests.get(link).content,'html.parser')
     
@@ -209,6 +221,7 @@ def acc_storage():
         ckda = []
         ckdastats = []
         cwinrate = []
+        caacstats = []
         try:
             getchampstats(acc)
             name_fail.append('-')
@@ -228,13 +241,15 @@ def acc_storage():
             ckdastats.append(x)
         for x in win_rate:
             cwinrate.append(x)
+        for x in acc_stats:
+            caacstats.append(x)
 
             
-        dict = {"champs":hnames,"classes":cnames,"champ_time":ctime,"kda":ckda,"kda_stats":ckdastats,"win%":cwinrate}
+        dict = {"champs":hnames,"classes":cnames,"champ_time":ctime,"kda":ckda,"kda_stats":ckdastats,"win%":cwinrate,"acc_info":caacstats}
         all_stats.update({acc:dict})
 
         print("finished storing:",acc)  
-
+    return "finished"
 
 draw = False
 menu_key = 0x2D # I want to make it tab to match paladins but that would block part of your teams talents 
@@ -248,22 +263,22 @@ pm.overlay_init()
 
 index = 0 # index is used to get the proper player info for the champion info box
 toggle = 1 # Toggle is used to open and close the debug player names box
+
 while pm.overlay_loop():
     if pm.key_pressed(menu_key):
         draw = not draw
         pm.toggle_mouse()
-        sleep(0.1)
+        
     pm.begin_drawing()
-    space = 0
-
+    
+    # space = 0
     if draw:
         if pm.gui_window_box(5, 5, maxw, 1065,title="Paladins G-uWu-I"):
             draw = not draw
             pm.toggle_mouse()
 
-        if pm.gui_button(5,100,maxw,maxh,text='print player names'):
-            print(name_fail)
-
+        if pm.gui_button(5,65,maxw,maxh,text='print dict button'):
+            print(all_stats)
         if pm.gui_button(5,25,maxw,maxh,text='Scan names'):
             name_fail.clear()
             # if the getname has already been ran, don't run it again, if its ran again it'll overwrite our name_fail list.
@@ -289,26 +304,26 @@ while pm.overlay_loop():
                     name_fail.clear()
                     toggle = 0
                     break
-                    
+
+                
         if pm.gui_button(5,50,maxw,maxh,text='Clear'):
             players.clear()
             name_fail.clear()    
             index = 0
+
         c = 0
         s = 0
-
         for player in players:
             if toggle == 1:
+                pm.draw_text("Once you've made your changes, re-run \n Scan Names to view stats",10,900,12,color=(pm.get_color('red')))
                 if pm.gui_text_box(10,500+s,maxw,maxh,text=player,id=c):
                     players[c] = pm.gui_text_box(10,500+s,maxw,maxh,text=player,id=c)
                 if player in name_fail:
-                    pm.draw_rectangle_lines(10,500+s,maxw,maxh,color=(pm.get_color('red')),lineThick=1.0)
-
-                    # print(print(len(players)),len(name_fail))
-
+                    pm.draw_rectangle_lines(10,500+s,maxw,maxh-2,color=(pm.get_color('red')),lineThick=4.0)
             c+=1 
             s+=25
-                
+        
+
         pm.gui_group_box(10,150,maxw-10,200,text='Account Info')
         pm.gui_group_box(10,355,maxw-10,708,text='Champion Info')
 
@@ -321,8 +336,17 @@ while pm.overlay_loop():
                 # if any failed names are present do not open the UI, otherwise it will probably crash if you select anything past an errored out name
                 if len(name_fail) == 0:
                     try:
+                    
+                            
+                        for x in all_stats[players[index]]['acc_info']:
+                            if toggle == 0:
+                                pm.gui_label(15,180,maxw-10,maxh,text='Region: '+all_stats[players[index]]['acc_info'][2])
+                                pm.gui_label(15,200,maxw-10,maxh,text='Global Stats: '+all_stats[players[index]]['acc_info'][0]+' '+all_stats[players[index]]['acc_info'][1])
+                                pm.gui_label(15,220,maxw-10,maxh,text='Last Seen: '+all_stats[players[index]]['acc_info'][3])
+
                         for x in all_stats[players[index]]['champs']:
                             if toggle == 0:
+        
                                 pm.gui_label(15,360+(space_y*6),maxw-10,maxh,text='Champion : '+all_stats[players[index]]['champs'][c]+' '+all_stats[players[index]]['classes'][c]+' '+all_stats[players[index]]['champ_time'][c])
                                 pm.gui_label(15,380+(space_y*6),maxw-10,maxh,text='Stats : '+all_stats[players[index]]['kda'][c]+' '+all_stats[players[index]]['win%'][c])
                                 pm.gui_label(15,400+(space_y*6),maxw-10,maxh,text='KDA stats : '+all_stats[players[index]]['kda_stats'][c])
