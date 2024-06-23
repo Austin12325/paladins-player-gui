@@ -63,17 +63,19 @@ def playerloc(index):
     
 def screenshot(index):
     # creating the storage folder if not present in current directory
-    # for x in os.listdir():
-    #     if x == 'paladins-gui-images':
-    #         present = 1
-    #     else:
-    #         present = 0
-    #         pass
-    # if present == 1:
-    #     pass
-    # else:
-    #     os.mkdir('paladins-gui-images')
-    #     print('image storage created:', cwd,'\paladins-gui-images')
+    for x in os.listdir():
+        if x == 'paladins-gui-images':
+            present = 1
+            break
+        else:
+            present = 0
+            pass
+    
+    if present == 1:
+        pass
+    else:
+        os.mkdir('paladins-gui-images')
+        print('image storage created:', cwd,'\paladins-gui-images')
     
 
     with mss.mss() as sct:
@@ -134,6 +136,7 @@ def getlink(player):
     
                 
 def getchampstats(player):
+    sleep(1)
     print('Starting storage on player',player)
     heronames.clear()
     classnames.clear()
@@ -211,44 +214,89 @@ def getchampstats(player):
 
 # acc_storage is used to store the data I got from getchampstats (from their  paladins guru) in the all_stats dictionary
 def acc_storage():
-    name_fail.clear()
 
-    for acc in players:
-        print(players)
-        hnames = []
-        cnames = []
-        ctime = []
-        ckda = []
-        ckdastats = []
-        cwinrate = []
-        caacstats = []
-        try:
-            getchampstats(acc)
-            name_fail.append('-')
-        except:
-            print("account grab failed, correct with debug names")
-            name_fail.append(acc)
+    print(len(name_fail))
+    if len(name_fail)>1:
 
-        for x in heronames:
-            hnames.append(x)
-        for x in classnames:
-            cnames.append(x)
-        for x in champ_playtime:
-            ctime.append(x)
-        for x in kda:
-            ckda.append(x)
-        for x in kda_stats:
-            ckdastats.append(x)
-        for x in win_rate:
-            cwinrate.append(x)
-        for x in acc_stats:
-            caacstats.append(x)
+        print('running name fail storage')
+        c = 0
 
-            
-        dict = {"champs":hnames,"classes":cnames,"champ_time":ctime,"kda":ckda,"kda_stats":ckdastats,"win%":cwinrate,"acc_info":caacstats}
-        all_stats.update({acc:dict})
+        for acc in name_fail:
+            hnames = []
+            cnames = []
+            ctime = []
+            ckda = []
+            ckdastats = []
+            cwinrate = []
+            caacstats = []
+            if len(acc) == 1:
+                print("good ",c,players[c])
 
-        print("finished storing:",acc)  
+                c+=1
+            else:
+                getchampstats(players[c])
+                for x in heronames:
+                    hnames.append(x)
+                for x in classnames:
+                    cnames.append(x)
+                for x in champ_playtime:
+                    ctime.append(x)
+                for x in kda:
+                    ckda.append(x)
+                for x in kda_stats:
+                    ckdastats.append(x)
+                for x in win_rate:
+                    cwinrate.append(x)
+                for x in acc_stats:
+                    caacstats.append(x)
+                dict = {"champs":hnames,"classes":cnames,"champ_time":ctime,"kda":ckda,"kda_stats":ckdastats,"win%":cwinrate,"acc_info":caacstats}
+                all_stats.update({players[c]:dict})
+                print("FAIL ",players[c],c)
+                c+=1
+        name_fail.clear()
+    
+    else:
+        print('running normal storage')
+        print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        name_fail.clear()
+        for acc in players:
+            hnames = []
+            cnames = []
+            ctime = []
+            ckda = []
+            ckdastats = []
+            cwinrate = []
+            caacstats = []
+            print(players)
+
+            try:
+                getchampstats(acc)
+                name_fail.append('-')
+            except:
+                print("account grab failed, correct with debug names")
+                name_fail.append(acc)
+
+            for x in heronames:
+                hnames.append(x)
+            for x in classnames:
+                cnames.append(x)
+            for x in champ_playtime:
+                ctime.append(x)
+            for x in kda:
+                ckda.append(x)
+            for x in kda_stats:
+                ckdastats.append(x)
+            for x in win_rate:
+                cwinrate.append(x)
+            for x in acc_stats:
+                caacstats.append(x)
+
+                
+            dict = {"champs":hnames,"classes":cnames,"champ_time":ctime,"kda":ckda,"kda_stats":ckdastats,"win%":cwinrate,"acc_info":caacstats}
+            all_stats.update({acc:dict})
+
+            print("finished storing:",acc)  
+        
     return "finished"
 
 draw = False
@@ -261,11 +309,13 @@ pm.overlay_init()
 # pm.gui_load_style(r"C:\Users\Austin\Documents\Python\Projects\Web_stuff\styles\default\style_default.txt.rgs")
 # I need to figure out how to reset that box's contents, also my font no worky 
 
+
 index = 0 # index is used to get the proper player info for the champion info box
 toggle = 1 # Toggle is used to open and close the debug player names box
 
 while pm.overlay_loop():
     if pm.key_pressed(menu_key):
+        sleep(1)
         draw = not draw
         pm.toggle_mouse()
         
@@ -277,10 +327,7 @@ while pm.overlay_loop():
             draw = not draw
             pm.toggle_mouse()
 
-        if pm.gui_button(5,65,maxw,maxh,text='print dict button'):
-            print(all_stats)
         if pm.gui_button(5,25,maxw,maxh,text='Scan names'):
-            name_fail.clear()
             # if the getname has already been ran, don't run it again, if its ran again it'll overwrite our name_fail list.
             if len(players)<= 9:
                 getname(10)
@@ -291,35 +338,43 @@ while pm.overlay_loop():
 
             # This block is going to check if we have any errors, if there are 0 errors then clear name_fail once name_fail is cleared allow drop down box to show.
             fail_check = 0
-            for playerf in name_fail:
-                print(name_fail)
-                print('checking name fail')
-                if len(playerf) <= 3:
-                    print(playerf,'greater than 3')
-                    print(len(players),len(name_fail))
-                    fail_check += 1
-                    print(fail_check)
-                if fail_check == 10:
-                    print('clearing name fail, no errors left')
-                    name_fail.clear()
-                    toggle = 0
-                    break
+            if len(name_fail) >= 1:
+                for playerf in name_fail:
+                    print(name_fail)
+                    print('checking name fail')
+                    if fail_check == 10:
+                        print('clearing name fail, no errors left')
+                        name_fail.clear()
+                        toggle = 0
+                        break
+                    if len(playerf) <= 3:
+                        print(playerf,'greater than 3')
+                        print(len(players),len(name_fail))
+                        fail_check += 1
+                        print(fail_check,'If 10 this should')
+            else:
+                print('no more failed names')
+                fail_check = 10
+                toggle = 0
 
                 
         if pm.gui_button(5,50,maxw,maxh,text='Clear'):
-            players.clear()
-            name_fail.clear()    
+            players_str.clear()
             index = 0
+            toggle = 1
+            name_fail.clear()
+            players.clear()
+            all_stats.clear()
 
         c = 0
         s = 0
         for player in players:
             if toggle == 1:
                 pm.draw_text("Once you've made your changes, re-run \n Scan Names to view stats",10,900,12,color=(pm.get_color('red')))
-                if pm.gui_text_box(10,500+s,maxw,maxh,text=player,id=c):
-                    players[c] = pm.gui_text_box(10,500+s,maxw,maxh,text=player,id=c)
+                if pm.gui_text_box(10,500+s,maxw-5,maxh,text=player,id=c):
+                    players[c] = pm.gui_text_box(10,500+s,maxw-5,maxh,text=player,id=c)
                 if player in name_fail:
-                    pm.draw_rectangle_lines(10,500+s,maxw,maxh-2,color=(pm.get_color('red')),lineThick=4.0)
+                    pm.draw_rectangle_lines(10,500+s,maxw-5,maxh-2,color=(pm.get_color('red')),lineThick=4.0)
             c+=1 
             s+=25
         
@@ -331,13 +386,14 @@ while pm.overlay_loop():
         if index >= 0:
             # make sure all_stats dict is populated
             if len(all_stats) >= 1:
+                
                 c = 0
                 space_y = 0
                 # if any failed names are present do not open the UI, otherwise it will probably crash if you select anything past an errored out name
                 if len(name_fail) == 0:
-                    try:
                     
-                            
+                    try:   
+                        
                         for x in all_stats[players[index]]['acc_info']:
                             if toggle == 0:
                                 pm.gui_label(15,180,maxw-10,maxh,text='Region: '+all_stats[players[index]]['acc_info'][2])
@@ -355,5 +411,6 @@ while pm.overlay_loop():
                             
                         index = pm.gui_dropdown_box(5,100,maxw,maxh,text=''.join((str(x)) for x in players_str),id=1)
                     except:
+                        pm.draw_text("failed to draw stats :( you should never see this",10,900,12,color=(pm.get_color('red')))
                         pass
     pm.end_drawing()
